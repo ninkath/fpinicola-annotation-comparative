@@ -1,0 +1,12 @@
+name: genemark_perl
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - perl
+  - perl-threaded
+  - perl-yaml
+  - perl-hash-merge
+  - perl-parallel-forkmanager
+  - perl-mce
+  - perl-math-utils

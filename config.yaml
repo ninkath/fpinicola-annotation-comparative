@@ -1,0 +1,155 @@
+# ============================================================================
+# Annotation and comparative genomics config
+# ============================================================================
+# This pipeline assumes that the reference genome for F. pinicola already exists
+# in results/assembly/{reference_sample}/assembly.fasta.
+#
+# In this project, that file is the polished Medaka consensus.fasta copied in and
+# renamed to assembly.fasta.
+# ============================================================================
+
+# ============================================================================
+# Samples
+# ============================================================================
+# Sample name. Must match the F_pinicola paths in the comparative section below.
+samples:
+  fpindikaryon:
+    
+# Reference sample used for annotation (if you have more than one sample). 
+reference_sample: "fpindikaryon"
+
+# ============================================================================
+# Directories
+# ============================================================================
+data_dir: "data"
+results_dir: "results"
+resources_dir: "resources"
+logs_dir: "logs"
+
+# ============================================================================
+# Computational resources
+# ============================================================================
+threads:
+  light: 4
+  medium: 8
+  heavy: 16
+  max: 16
+
+# ============================================================================
+# Apptainer settings
+# ============================================================================
+# These directories must exist before running the workflow.
+apptainer:
+  cache_dir: "~/.apptainer/cache"
+  tmp_dir: "~/.apptainer/tmp"
+
+# ============================================================================
+# Reference annotation
+# ============================================================================
+annotation:
+  species_name: "Fomitopsis_pinicola"
+  # Closest suitable species available in the Augustus database
+  augustus_species: "phanerochaete_chrysosporium"
+  busco_seed_species: "polyporales"
+
+  repeatmodeler:
+    enable_ltr: true
+    use_with_funannotate: true
+    srand: 1773167657
+
+  dfam:
+    # Local Dfam FamDB directory used to extract Fungi-specific repeats
+    db_dir: "resources/dfam/FamDB"
+
+  # GeneMark is installed locally and requires a valid license key (.gm_key).
+  # This setup also depends on local Perl modules under perl5_dir.
+  genemark:
+    use_genemark: true
+    # Local GeneMark installation (manual install, not distributed in repo)
+    genemark_dir: "tools/genemark"
+    # GeneMark license key file
+    genemark_key: "secrets/.gm_key"
+    perl5_dir: "tools/perl5"
+
+  funannotate:
+    # Local funannotate database directory
+    db_dir: "resources/funannotate_db"
+    # Local Interproscan installation (manual install, not distributed in repo)
+    interproscan_path: "tools/interproscan-5.76-107.0/interproscan.sh"
+    # BUSCO DB name as expected by funannotate
+    busco_db: "polyporales"
+
+    # Protein evidence for funannotate predict, created with build_protein_evidence.sh script.
+    # set_b is the original evidence file used in the main analysis.
+    # active controls which file is used in the current run.
+    protein_evidence:
+      set_a: "resources/funannotate_protein_evidence/protein_evidence_SET_A_clean.fa"
+      set_b: "resources/funannotate_protein_evidence/protein_evidence_SET_B_relatives_plus_swissprot_fungi.fa"
+      active: "set_b"
+
+  eggnog:
+    db_dir: "resources/eggnog_db"
+    tax_scope: "Basidiomycota"
+
+  dbcan:
+    db_dir: "resources/dbcan_db"
+    evalue: 1e-15
+    coverage: 0.35
+
+  # Local SignalP 6 installation (not containerized in this workflow)
+  signalp:
+    dir: "tools/signalp-5.0b"
+    executable: "tools/signalp-5.0b/bin/signalp"
+
+# ============================================================================
+# External path for one input file. The genome windows file is created in the complimentary assembly pipeline.
+# ============================================================================
+external:
+  genome_windows_10kb: "/ENTER/PATH/HERE/TO/genome_windows_10kb.bed"
+
+# ============================================================================
+# QC
+# ============================================================================
+# BUSCO lineage dataset used in QC rules
+qc:
+  busco_lineage: "polyporales_odb12"
+  busco_db_path: "resources/busco_db"
+
+# ============================================================================
+# Comparative genomics
+# ============================================================================
+# F_pinicola uses proteins predicted in this workflow. Name of sample must be reflected in paths.
+# F_schrenkii and F_rosea use manually downloaded published protein and assembly files.
+comparative:
+  species:
+    F_pinicola:
+      proteins: "results/annotation/fpindikaryon/predict_results/fpindikaryon.proteins.fa"
+      assembly: "results/assembly/fpindikaryon/assembly.fasta"
+      busco_summary: "results/qc/busco_polished/fpindikaryon/short_summary.txt"
+      
+    F_schrenkii:
+      proteins: "comparative/F_schrenkii/Fompi3_GeneCatalog_proteins_20120705.aa.fasta"
+      assembly: "comparative/F_schrenkii/Fompi3_AssemblyScaffolds.fasta"
+      ipr: "comparative/F_schrenkii/Fompi3_GeneCatalog_proteins_20120705_IPR.tab"
+      busco_summary: "results/comparative/busco/F_schrenkii/short_summary.txt"
+
+    F_rosea:
+      proteins: "comparative/F_rosea/Fomro1_GeneCatalog_proteins_20180323.aa.fasta"
+      assembly: "comparative/F_rosea/Fomro1_AssemblyScaffolds.fasta"
+      ipr: "comparative/F_rosea/Fomro1_GeneCatalog_proteins_20180323_IPR.tab"
+      busco_summary: "results/comparative/busco/F_rosea/short_summary.txt"
+
+# ============================================================================
+# Containers
+# ============================================================================
+# Container images are pulled automatically when running with --use-apptainer
+containers:
+  repeatmodeler: "docker://quay.io/biocontainers/repeatmodeler:2.0.7--pl5321hdfd78af_0"
+  tetools: "docker://dfam/tetools:1.95"
+  funannotate: "docker://nextgenusfs/funannotate:v1.8.15"
+  eggnog-mapper: "docker://quay.io/biocontainers/eggnog-mapper:2.1.13--pyhdfd78af_2"
+  dbcan: "docker://quay.io/biocontainers/dbcan:5.2.1--pyhdfd78af_0"
+  orthofinder: "docker://quay.io/biocontainers/orthofinder:3.1.3--hdfd78af_1"
+  busco: "docker://ezlabgva/busco:v6.0.0_cv1"
+  mosdepth: "docker://quay.io/biocontainers/mosdepth:0.3.13--hba6dcaf_0"
+  bedtools: "docker://quay.io/biocontainers/bedtools:2.27.1--h077b44d_9"
