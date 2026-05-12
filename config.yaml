@@ -139,6 +139,14 @@ comparative:
       ipr: "comparative/F_rosea/Fomro1_GeneCatalog_proteins_20180323_IPR.tab"
       busco_summary: "results/comparative/busco/F_rosea/short_summary.txt"
 
+synteny:
+  min_length:
+    default: 200000        # 200 kb for fragmented assemblies
+    F_pinicola: 1000000    # 1 Mb for the chromosome-level assembly
+  max_sequences: 25
+  plot_min_length: 500
+  plot_min_identity: 80
+
 # ============================================================================
 # Containers
 # ============================================================================
@@ -153,3 +161,4 @@ containers:
   busco: "docker://ezlabgva/busco:v6.0.0_cv1"
   mosdepth: "docker://quay.io/biocontainers/mosdepth:0.3.13--hba6dcaf_0"
   bedtools: "docker://quay.io/biocontainers/bedtools:2.27.1--h077b44d_9"
+  mummer: "docker://quay.io/biocontainers/mummer4:4.0.1--pl5321h9948957_0"
