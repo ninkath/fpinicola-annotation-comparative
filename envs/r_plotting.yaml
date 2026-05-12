@@ -11,3 +11,4 @@ dependencies:
   - r-pheatmap
   - r-complexupset
   - r-stringr
+  - r-ggtext
