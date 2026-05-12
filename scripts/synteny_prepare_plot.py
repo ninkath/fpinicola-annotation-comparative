@@ -16,10 +16,6 @@ Steps:
          order, length, cumulative offset, and centre position for axis
          tick placement and gridlines.
 
-The greedy reordering is the same heuristic used by visualisation tools
-such as D-GENIES. It does not guarantee a global optimum, but in practice
-it places dominant orthologue pairs on the diagonal cleanly.
-"""
 from pathlib import Path
 
 import pandas as pd
