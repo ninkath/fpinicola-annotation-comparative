@@ -1150,3 +1150,149 @@ rule repeat_bp_density:
         rm -f {output.density}.tmp_*
         test -s {output.density}
         """
+
+# ============================================================================
+# PAIRWISE SYNTENY AND SYNTENY PLOT GENERATION
+# ============================================================================
+# Helper function
+def get_synteny_min_length(wildcards):
+    """Per-species min_length override; falls back to default."""
+    ml = config.get("synteny", {}).get("min_length", 100_000)
+    if isinstance(ml, dict):
+        return ml.get(wildcards.species, ml.get("default", 100_000))
+    return ml
+
+# Extracting sequences from assemblies
+rule synteny_extract_sequences:
+    input:
+        fasta = lambda wc: COMPARATIVE[wc.species]["assembly"]
+    output:
+        fasta = "results/comparative/synteny_dotplot/{species}/{species}.sequences.fasta",
+        summary = "results/comparative/synteny_dotplot/{species}/{species}.sequences.tsv"
+    params:
+        min_length = get_synteny_min_length,
+        max_sequences = config.get("synteny", {}).get("max_sequences", 30)
+    conda:
+        "envs/plotting_python.yaml"
+    script:
+        "scripts/synteny_extract_sequences.py"
+
+# Pairwise aligment with NUCmer/Mummer
+rule synteny_nucmer_align:
+    """
+    Pairwise NUCmer alignment. Default parameters; one-to-one best
+    alignments retained via delta-filter -1.
+    """
+    input:
+        ref = "results/comparative/synteny_dotplot/{ref}/{ref}.sequences.fasta",
+        query = "results/comparative/synteny_dotplot/{query}/{query}.sequences.fasta"
+    output:
+        raw_delta = "results/comparative/synteny_dotplot/{ref}_vs_{query}/alignment.delta",
+        filtered_delta = "results/comparative/synteny_dotplot/{ref}_vs_{query}/alignment.filtered.delta",
+        coords = "results/comparative/synteny_dotplot/{ref}_vs_{query}/alignment.coords.tsv"
+    params:
+        outdir = "results/comparative/synteny_dotplot/{ref}_vs_{query}",
+        prefix = "results/comparative/synteny_dotplot/{ref}_vs_{query}/alignment"
+    threads:
+        config["threads"]["heavy"]
+    container:
+        config["containers"]["mummer"]
+    log:
+        "logs/synteny_dotplot/{ref}_vs_{query}.mummer.log"
+    shell:
+        r"""
+        set -euo pipefail
+
+        mkdir -p {params.outdir}
+        mkdir -p "$(dirname {log})"
+
+        REF=$(realpath {input.ref})
+        QUERY=$(realpath {input.query})
+
+        echo "Reference: $REF" | tee {log}
+        echo "Query:     $QUERY" | tee -a {log}
+
+        nucmer \
+            -t {threads} \
+            -p {params.prefix} \
+            "$REF" "$QUERY" \
+            2>&1 | tee -a {log}
+
+        test -s {output.raw_delta}
+
+        delta-filter \
+            -1 \
+            {output.raw_delta} \
+            > {output.filtered_delta}
+
+        test -s {output.filtered_delta}
+
+        show-coords \
+            -rclTH \
+            {output.filtered_delta} \
+            > {output.coords}
+
+        test -s {output.coords}
+        """
+
+# Synteny table creation
+rule synteny_prepare_plot:
+    """
+    Build plot tables on cumulative genome scale. Reorders query
+    sequences greedily so dominant orthologue pairs lie on the diagonal.
+    """
+    input:
+        coords = "results/comparative/synteny_dotplot/{ref}_vs_{query}/alignment.coords.tsv",
+        ref_summary = "results/comparative/synteny_dotplot/{ref}/{ref}.sequences.tsv",
+        query_summary = "results/comparative/synteny_dotplot/{query}/{query}.sequences.tsv"
+    output:
+        table = "results/comparative/synteny_dotplot/{ref}_vs_{query}/plot_coords.tsv",
+        layout = "results/comparative/synteny_dotplot/{ref}_vs_{query}/plot_layout.tsv"
+    params:
+        min_len = config.get("synteny", {}).get("plot_min_length", 500),
+        min_identity = config.get("synteny", {}).get("plot_min_identity", 80)
+    conda:
+        "envs/plotting_python.yaml"
+    script:
+        "scripts/synteny_prepare_plot.py"
+
+# Synteny plot creation
+rule synteny_plot_dotplot:
+    """
+    Render pairwise NUCmer dotplot with line segments on cumulative
+    genome coordinates.
+    """
+    input:
+        table = "results/comparative/synteny_dotplot/{ref}_vs_{query}/plot_coords.tsv",
+        layout = "results/comparative/synteny_dotplot/{ref}_vs_{query}/plot_layout.tsv"
+    output:
+        png = "results/comparative/synteny_dotplot/{ref}_vs_{query}/dotplot.png",
+        pdf = "results/comparative/synteny_dotplot/{ref}_vs_{query}/dotplot.pdf"
+    conda:
+        "envs/r_plotting.yaml"
+    script:
+        "scripts/synteny_plot_dotplot.R"
+
+
+# Convenience targets for synteny plots
+rule synteny_F_rosea_vs_F_pinicola:
+    input:
+        "results/comparative/synteny_dotplot/F_rosea_vs_F_pinicola/dotplot.png"
+
+
+rule synteny_F_schrenkii_vs_F_pinicola:
+    input:
+        "results/comparative/synteny_dotplot/F_schrenkii_vs_F_pinicola/dotplot.png"
+
+
+rule synteny_F_rosea_vs_F_schrenkii:
+    input:
+        "results/comparative/synteny_dotplot/F_rosea_vs_F_schrenkii/dotplot.png"
+
+
+rule synteny_dotplot_all:
+    input:
+        "results/comparative/synteny_dotplot/F_rosea_vs_F_pinicola/dotplot.png",
+        "results/comparative/synteny_dotplot/F_schrenkii_vs_F_pinicola/dotplot.png",
+        "results/comparative/synteny_dotplot/F_rosea_vs_F_schrenkii/dotplot.png"
+
