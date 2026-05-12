@@ -134,7 +134,11 @@ required as input for the circos plot and the candidate MAT-B locus plot
 │   ├── plot_orthogroup_upset.R                # Orthogroup UpSet plot
 │   ├── species_specific_ipr_summary.py        # InterPro summary for species-specific orthogroups
 │   ├── circos_genome_plot.R                   # Manual circos genome landscape figure
-│   └── mat_b_locus_plot.R                     # Manual candidate MAT-B locus figure
+│   ├── mat_b_locus_plot.R                     # Manual candidate MAT-B locus figure
+│   ├── synteny_extract_sequences.py           # Extract sequences for pairwise synteny
+│   ├── synteny_prepare_plot.py                # NUCmer coordinate processing for synteny analysis
+│   ├── synteny_plot_dotplot.R                 # Synteny figures
+│   └── synteny_summary_table.py               # Summary statistics for the synteny analysis
 ├── README.md                                  # This file
 └── LICENSE
 ```
