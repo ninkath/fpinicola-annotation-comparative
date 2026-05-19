@@ -9,7 +9,7 @@ annotation of a near-chromosome-level reference genome for Fomitopsis pinicola,
 and comparative genomic analysis with closely related species* (Nina Thorstensen,
 University of South-Eastern Norway, 2026).
 
-A companion workflow for assembly, polishing, and heterozygosity analysis is
+A companion workflow for assembly, polishing and heterozygosity analysis is
 available 
 [[LINK to assembly/QC repository here](https://github.com/ninkath/fpinicola-assembly-qc)]
 
@@ -21,13 +21,13 @@ companion workflow), the pipeline performs:
 - **Repeat library construction** with RepeatModeler (LTR structural analysis
   enabled) combined with the Fungi subset of Dfam, used to soft-mask the genome
 - **Gene prediction** with funannotate, integrating Augustus, SNAP, GlimmerHMM,
-  GeneMark-ES, and EVidenceModeler with external protein evidence
+  GeneMark-ES and EVidenceModeler with external protein evidence
 - **Functional annotation** with InterProScan, eggNOG-mapper (Basidiomycota
-  scope), SignalP, and dbCAN (HMMER + DIAMOND + dbCANsub consensus)
+  scope), SignalP and dbCAN (HMMER + DIAMOND + dbCANsub consensus)
 - **Comparative analysis** against two publicly available *Fomitopsis* genomes
   (*F. schrenkii* Fompi3 and *F. rosea* Fomro1, both from JGI MycoCosm),
   including BUSCO completeness, OrthoFinder orthology inference, COG functional
-  category profiles, total and secreted CAZyme repertoires, and InterPro
+  category profiles, total and secreted CAZyme repertoires, pairwise macrosynteny and InterPro
   characterisation of species-specific orthogroups
 - **Per-window tracks** used as additional input for the circos visualisation
   in the thesis (gene density, repeat composition by class)
@@ -71,7 +71,7 @@ running the workflow. The default paths expect them under `resources/`. Note tha
 |---|---|---|
 | funannotate database | Pfam, MEROPS, Augustus species models | `annotation.funannotate.db_dir` |
 | eggNOG database | eggNOG-mapper functional annotation | `annotation.eggnog.db_dir` |
-| dbCAN database | CAZyme HMM, DIAMOND, and dbCANsub references | `annotation.dbcan.db_dir` |
+| dbCAN database | CAZyme HMM, DIAMOND and dbCANsub references | `annotation.dbcan.db_dir` |
 | Dfam FamDB | Curated repeat families (Fungi subset extracted at runtime) | `annotation.dfam.db_dir` |
 | BUSCO database | `polyporales_odb12` lineage dataset for the comparative BUSCO step | `qc.busco_db_path` |
 
@@ -145,7 +145,7 @@ required as input for the circos plot and the candidate MAT-B locus plot
 ```
 
 The `results/`, `tools/`, `secrets/`, `resources/`, `proteins_raw/`,
-`proteins_evidence/`, and `external_inputs/` directories are not
+`proteins_evidence/` and `external_inputs/` directories are not
 version-controlled and are created or populated by the user.
 
 ## Configuration
@@ -224,6 +224,8 @@ snakemake --use-apptainer --use-conda --cores 4 \
     results/comparative/plots/dbcan_family_heatmap.png \
     results/comparative/plots/secreted_dbcan_family_heatmap.png
 
+snakemake --use-apptainer --use-conda --cores 4 synteny_dotplot_all
+
 # 7. Per-window tracks for the circos plot
 snakemake --use-apptainer --cores 4 \
     results/circos/fpindikaryon/gene_density_10kb.tsv \
@@ -267,29 +269,6 @@ heterozygosity track from the assembly/QC pipeline.
 ```bash
 Rscript scripts/mat_b_locus_plot.R
 ```
-
-## Output structure
-
-Selected output paths produced by the workflow:
-
-| Path | Contents |
-|---|---|
-| `results/annotation/{sample}/repeatmodeler/` | RepeatModeler library and combined repeat library |
-| `results/annotation/{sample}/masked_genome.fasta` | Soft-masked reference assembly |
-| `results/annotation/{sample}/genemark/` | GeneMark-ES predictions |
-| `results/annotation/{sample}/predict_results/` | funannotate predict outputs (GFF3, GBK, proteins) |
-| `results/annotation/{sample}/eggnog/` | eggNOG-mapper annotations |
-| `results/annotation/{sample}/interproscan/` | InterProScan TSV and XML |
-| `results/annotation/{sample}/signalp/` | SignalP summary |
-| `results/annotation/{sample}/dbcan/` | dbCAN HMMER, DIAMOND, dbCANsub, and consensus output |
-| `results/annotation/{sample}/annotate_results/` | Final funannotate annotation set |
-| `results/comparative/dbcan/{species}/` | dbCAN output for the comparative species |
-| `results/comparative/eggnog/{species}/` | eggNOG-mapper output for the comparative species |
-| `results/comparative/signalp/{species}/` | SignalP output for the comparative species |
-| `results/comparative/orthofinder_results/` | OrthoFinder results directory |
-| `results/comparative/tables/` | Summary tables for all comparative analyses |
-| `results/comparative/plots/` | Heatmaps, barplots, and UpSet plot |
-| `results/circos/{sample}/` | Per-window gene density and repeat composition tracks |
 
 ## License
 
