@@ -10,7 +10,8 @@ and comparative genomic analysis with closely related species* (Nina Thorstensen
 University of South-Eastern Norway, 2026).
 
 A companion workflow for assembly, polishing, and heterozygosity analysis is
-available at: [LINK to assembly/QC repository here]
+available 
+[[LINK to assembly/QC repository here](https://github.com/ninkath/fpinicola-assembly-qc)]
 
 ## What this workflow does
 
